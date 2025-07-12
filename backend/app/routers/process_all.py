@@ -1,29 +1,19 @@
-from fastapi import APIRouter, Request
-from app.services.openrouter_api import ask_openrouter, organize_questions_with_ia
-from app.services.pdf_extractor import extract_questions_from_pdf
-from app.services.templates import gerar_html_template
-from weasyprint import HTML
+from fastapi import APIRouter, Body
+from app.services.openrouter_api import analyze_pattern, organize_law_text, esquematize_law
 
 router = APIRouter()
 
-@router.post("/process-all/")
-async def process_all(request: Request):
-    data = await request.json()
-    pdf_path = data["pdf_path"]
-    modelo_ia = data.get("model", "mistralai/mixtral-8x7b-instruct")
+@router.post("/analyze/pattern")
+def analyze_pattern_endpoint(questions: str = Body(...), model: str = "mistralai/mistral-8x7b-instruct"):
+    result = analyze_pattern(questions, model=model)
+    return {"message": result}
 
-    # 1. Extrai as questões (limite de 50)
-    questoes = extract_questions_from_pdf(pdf_path)
-    questoes_limitadas = questoes[:50] if isinstance(questoes, list) else questoes
+@router.post("/organize/law")
+def organize_law_endpoint(law_text: str = Body(...), model: str = "mistralai/mistral-8x7b-instruct"):
+    organized = organize_law_text(law_text, model=model)
+    return {"preview": organized}
 
-    # 2. Organiza via IA
-    questoes_organizadas = organize_questions_with_ia(questoes_limitadas, model=modelo_ia)
-
-    # 3. Gera HTML
-    html = gerar_html_template(questoes_organizadas)
-
-    # 4. Exporta PDF via WeasyPrint
-    output_pdf = pdf_path.replace(".pdf", "_resumo.pdf")
-    HTML(string=html).write_pdf(output_pdf)
-
-    return {"resumo_pdf": output_pdf}
+@router.post("/esquematize")
+def esquematize_law_endpoint(pattern: str = Body(...), law_organized: str = Body(...), model: str = "mistralai/mistral-8x7b-instruct"):
+    esquematizado = esquematize_law(pattern, law_organized, model=model)
+    return {"output": esquematizado}
