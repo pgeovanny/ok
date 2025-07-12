@@ -7,7 +7,9 @@ UPLOADS_DIR = "uploads"
 
 @router.post("/file")
 async def upload_file(file: UploadFile = File(...)):
-    os.makedirs(UPLOADS_DIR, exist_ok=True)  # Garante que a pasta existe
+    # Garante que a pasta existe
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
+    # Salva no caminho exato
     file_path = os.path.join(UPLOADS_DIR, file.filename)
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
