@@ -1,31 +1,51 @@
-import requests
 import os
+import requests
+from dotenv import load_dotenv
 
-OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
+load_dotenv()
 
-def ask_openrouter(prompt, model="mistralai/mistral-8x7b-instruct"):
-    # igual já usamos antes
-    ...
+API_KEY = os.getenv("OPENROUTER_API_KEY")
+BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-def analyze_pattern(questions, model):
-    prompt = f"""Analise cuidadosamente as questões abaixo e identifique o padrão da banca. Ao terminar, responda apenas: 'Padrão da banca entendido.'
-QUESTÕES:
-{questions}
-"""
-    return ask_openrouter(prompt, model=model)
+def ask_openrouter(prompt: str, model: str) -> str:
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "Você é um especialista em concursos e legislação."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+    r = requests.post(BASE_URL, headers=headers, json=payload, timeout=90)
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"]
 
-def organize_law_text(law_text, model):
-    prompt = f"""Organize o texto a seguir em tópicos, artigos, quadros, destaques de informações importantes para facilitar a esquematização posterior:
-TEXTO DA LEI:
-{law_text}
-"""
-    return ask_openrouter(prompt, model=model)
+def organize_questions(raw: str, model: str) -> str:
+    prompt = (
+        "O texto abaixo contém questões de concurso extraídas de PDF, mas está desorganizado."
+        " Organize cada questão numerando, destacando enunciado, alternativas e gabarito.\n\n" + raw
+    )
+    return ask_openrouter(prompt, model)
 
-def esquematize_law(pattern, law_organized, model):
-    prompt = f"""Com base no padrão abaixo, aplique a esquematização na lei organizada, usando tabelas, quadros, grifos verdes para acertos, vermelhos para erros e o layout do app:
-PADRÃO:
-{pattern}
-LEI ORGANIZADA:
-{law_organized}
-"""
-    return ask_openrouter(prompt, model=model)
+def learn_pattern(organized: str, model: str) -> str:
+    prompt = (
+        "Analise as questões abaixo e identifique o padrão de cobrança da banca."
+        " Ao finalizar, responda apenas 'Padrão da banca aprendido:' seguido do padrão.\n\n" + organized
+    )
+    return ask_openrouter(prompt, model)
+
+def organize_law(law_text: str, model: str) -> str:
+    prompt = (
+        "Organize o texto da lei abaixo em tópicos e quadros para facilitar a esquematização posterior.\n\n" + law_text
+    )
+    return ask_openrouter(prompt, model)
+
+def apply_pattern(pattern: str, organized_law: str, model: str) -> str:
+    prompt = (
+        "Com base no padrão a seguir e na lei organizada, aplique a esquematização com quadros, tabelas, grifos verdes para pontos fortes e vermelhos para pontos fracos.\n\n" +
+        f"PADRÃO:\n{pattern}\n\nLEI ORGANIZADA:\n{organized_law}"
+    )
+    return ask_openrouter(prompt, model)

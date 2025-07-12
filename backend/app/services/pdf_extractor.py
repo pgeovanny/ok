@@ -1,15 +1,16 @@
 import pdfplumber
 
-def extract_text_from_pdf(pdf_path):
-    text = ""
+def extract_text_from_pdf(pdf_path: str) -> str:
     with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            text += page.extract_text() or ""
-    return text
+        return "".join(page.extract_text() or "" for page in pdf.pages)
 
-def extract_questions_from_pdf(pdf_path):
+def extract_questions_from_pdf(pdf_path: str) -> list[str]:
     text = extract_text_from_pdf(pdf_path)
-    # Aqui, adapte para separar questões conforme o padrão do seu PDF.
-    # Exemplo: cada questão começa com 'QUESTÃO'
-    questoes = [q.strip() for q in text.split("QUESTÃO") if q.strip()]
-    return questoes[:50]  # Limite de 50 questões
+    parts = text.split("QUESTÃO")
+    qs = []
+    for idx, part in enumerate(parts):
+        part = part.strip()
+        if not part:
+            continue
+        qs.append(f"QUESTÃO {idx}: {part}")
+    return qs

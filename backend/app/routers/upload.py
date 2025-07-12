@@ -1,14 +1,14 @@
 import os
-from fastapi import APIRouter, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, File, UploadFile
 
 router = APIRouter()
+UPLOADS_DIR = "uploads"
 
-@router.post("/upload/file")
+@router.post("/file")
 async def upload_file(file: UploadFile = File(...)):
-    os.makedirs("uploads", exist_ok=True)
-    file_path = f"uploads/{file.filename}"
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
+    file_path = os.path.join(UPLOADS_DIR, file.filename)
     with open(file_path, "wb") as f:
-        content = await file.read()
-        f.write(content)
-    return JSONResponse(content={"filename": file.filename, "path": file_path})
+        f.write(await file.read())
+    print(f"[UPLOAD] Arquivo salvo em: {file_path}")
+    return {"filename": file.filename, "path": file_path}
