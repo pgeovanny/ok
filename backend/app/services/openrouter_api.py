@@ -1,25 +1,31 @@
 import requests
 import os
 
-API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 
-def ask_openrouter(prompt, model="mistralai/mixtral-8x7b-instruct"):
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}]
-    }
-    r = requests.post(OPENROUTER_API_URL, headers=headers, json=data)
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+def ask_openrouter(prompt, model="mistralai/mistral-8x7b-instruct"):
+    # igual já usamos antes
+    ...
 
-def organize_questions_with_ia(questoes, model="mistralai/mixtral-8x7b-instruct"):
-    prompt = (
-        "Organize as questões abaixo em uma lista limpa, separando enunciado, alternativas e gabarito, para facilitar análise:\n\n"
-        + "\n\n".join(questoes)
-    )
+def analyze_pattern(questions, model):
+    prompt = f"""Analise cuidadosamente as questões abaixo e identifique o padrão da banca. Ao terminar, responda apenas: 'Padrão da banca entendido.'
+QUESTÕES:
+{questions}
+"""
+    return ask_openrouter(prompt, model=model)
+
+def organize_law_text(law_text, model):
+    prompt = f"""Organize o texto a seguir em tópicos, artigos, quadros, destaques de informações importantes para facilitar a esquematização posterior:
+TEXTO DA LEI:
+{law_text}
+"""
+    return ask_openrouter(prompt, model=model)
+
+def esquematize_law(pattern, law_organized, model):
+    prompt = f"""Com base no padrão abaixo, aplique a esquematização na lei organizada, usando tabelas, quadros, grifos verdes para acertos, vermelhos para erros e o layout do app:
+PADRÃO:
+{pattern}
+LEI ORGANIZADA:
+{law_organized}
+"""
     return ask_openrouter(prompt, model=model)
