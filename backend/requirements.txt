@@ -5,3 +5,4 @@ markdown2
 requests
 python-dotenv
 weasyprint
+python-multipart
