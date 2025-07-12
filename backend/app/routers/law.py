@@ -5,16 +5,20 @@ from app.services.openrouter_api import organize_law, apply_pattern
 router = APIRouter()
 
 @router.get("/extract")
-def extract(path: str = Query(..., description="Caminho retornado por /upload/file")):
+def extract(path: str = Query(..., description="Path retornado por /upload/file")):
     text = extract_text_from_pdf(path)
     return {"law_text": text}
 
 @router.post("/organize")
 def organize(law_text: str = Body(..., embed=True), model: str = Body("mistralai/mixtral-8x7b-instruct", embed=True)):
-    organized = organize_law(law_text, model=model)
+    organized = organize_law(law_text, model)
     return {"organized_law": organized}
 
 @router.post("/apply-pattern")
-def apply(pattern: str = Body(..., embed=True), organized_law: str = Body(..., embed=True), model: str = Body("mistralai/mixtral-8x7b-instruct", embed=True)):
-    result = apply_pattern(pattern, organized_law, model=model)
+def apply_pattern_endpoint(
+    pattern: str = Body(..., embed=True),
+    organized_law: str = Body(..., embed=True),
+    model: str = Body("mistralai/mixtral-8x7b-instruct", embed=True)
+):
+    result = apply_pattern(pattern, organized_law, model)
     return {"schematized": result}
