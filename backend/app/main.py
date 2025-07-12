@@ -1,15 +1,18 @@
 from fastapi import FastAPI
-from app.routers import upload, extract, openrouter, process_all
+from app.routers.upload import router as upload_router
+from app.routers.extract import router as extract_router
 
 app = FastAPI(
     title="Gabarite Backend",
-    description=(
-        "API para upload, extração e análise de leis e questões com IA OpenRouter, "
-        "fluxo automatizado de resumo/esquematização e exportação para PDF."
-    )
+    description="API para upload e extração de PDFs de questões e leis"
 )
 
-app.include_router(upload.router)
-app.include_router(extract.router)
-app.include_router(openrouter.router)
-app.include_router(process_all.router)
+# Rota raiz para evitar 404
+@app.get("/")
+def root():
+    return {"message": "API Gabarite online!"}
+
+# Inclui routers com prefixos
+app.include_router(upload_router, prefix="/upload", tags=["Upload"])
+app.include_router(extract_router, prefix="/extract", tags=["Extract"])
+
